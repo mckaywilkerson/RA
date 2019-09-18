@@ -1,5 +1,6 @@
 import PID
 import time
+import nidaqmx
 
 targetT = 20        # Target temperature
 P = 0               # Initial PID values
