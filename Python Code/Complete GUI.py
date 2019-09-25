@@ -6,6 +6,7 @@ from matplotlib.figure import Figure
 import numpy as np
 import visa
 
+
 class App():
     def __init__(self, master):
         
