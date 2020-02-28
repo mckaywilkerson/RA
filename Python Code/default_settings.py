@@ -27,3 +27,9 @@ int DSF = 30
 # 1 = if IP < 15, IP = 15
 # 2 = if IP < 30, IP = 30
 int xtrate = 2
+
+# set CalCoeff values
+float CalCoeff1 = 0.69379
+float CalCoeff2 = 0.0001266
+float CalCoeff3 = 336.09
+float CalCoeff4 = 0

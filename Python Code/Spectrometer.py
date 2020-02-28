@@ -1,6 +1,7 @@
 import ctypes
 import clr
 import os
+import numpy as np
 import sys
 
 import default_settings
@@ -38,6 +39,24 @@ class MySpectro:
         self.my_spectrometer.Rate(self.IntegrationPeriod)
         self.my_spectrometer.Update(default_settings.scansToAvg, default_settings.xsmooth, default_settings.tempComp)
         self.my_spectrometer.Mode(default_settings.xtrate)
+
+    def getBWee(self, chan):
+        #int i
+        #int16 ec
+        #int16 ea
+        #string coeffbuf
+
+        ec = np.int16(chan)
+        ea = np.int16(0x80)
+        if my_spectrometer.eeRead(ec, ea, buffer) == False:
+            return
+            
+        for (i in range(14)):
+            if buffer[i] < 0x20 or buffer[i] > 127:
+                return
+
+        # continue here
+        
 
     #def update_spectrometer:
 

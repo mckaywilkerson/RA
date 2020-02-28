@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import numpy as np
-import visa
+import pyvisa as visa
+import time
 
 
 class App():
@@ -20,6 +21,7 @@ class App():
         self.l1 = Label(root, text = 'Max Voltage:')
         self.l1.place(x = 615, y = 150)
         self.MaxVoltageInput = Entry(root)
+        self.MaxVoltageInput.insert(END, 'XX.X')
         self.MaxVoltageInput.place(x = 615, y = 180)
 
         #Current Range
@@ -28,10 +30,12 @@ class App():
         self.l2 = Label(root, text = 'Output High:')
         self.l2.place(x = 800, y = 100)
         self.MaxCurrentInput = Entry(root)
+        self.MaxCurrentInput.insert(END, 'X.XX')
         self.MaxCurrentInput.place(x = 800, y = 120)
         self.l16 = Label(root, text = 'Output Low:')
         self.l16.place(x = 800, y = 150)
         self.MinCurrentInput = Entry(root)
+        self.MinCurrentInput.insert(END, '0.00')
         self.MinCurrentInput.place(x = 800, y = 170)
 
         # Program Outputs (temp, current, time)
@@ -49,6 +53,12 @@ class App():
         self.l19.place(x = 865, y = 260)
         self.TimeOutput = Label(root, text = '0.0000')
         self.TimeOutput.place(x = 865, y = 280)
+
+        self.l20 = Label(root, text = "VISA Port: Power Supply:")
+        self.l20.place(x = 615, y = 30)
+        self.PSVisaInput = Entry(root)
+        self.PSVisaInput.insert(END, 'ASRL8::INSTR')
+        self.PSVisaInput.place(x = 755, y = 32)
         
         # START Button
         self.ProgramOn = False
@@ -90,7 +100,7 @@ class App():
         self.l13 = Label(root, text = 'VISA Port:')
         self.l13.place(x = 5, y = 530)
         self.LaserVISAInput = Entry(root)
-        self.LaserVISAInput.insert(END, 'ASRL5::INSTR')
+        self.LaserVISAInput.insert(END, 'ASRL7::INSTR')
         self.LaserVISAInput.place(x = 120, y = 530)
         self.l8 = Label(root, text = 'Laser Power(mW):')
         self.l8.place(x = 5, y = 560)
@@ -168,9 +178,10 @@ class App():
             self.my_instrument.read_termination = '\r'
             self.my_instrument.write_termination = '\r'
             self.my_instrument.write('ON')
+            time.sleep(.1)
             laserPower = 'POWER=' + str(self.LaserPowerInput.get())
             self.my_instrument.write(laserPower)
-            
+
         else:
             self.LaserButton.configure(bg = 'red')
             self.LaserOn = False
@@ -178,12 +189,34 @@ class App():
             self.my_instrument.write('OFF')
 
     def ProgramOnOff(self, event=None):
+        rm = visa.ResourceManager()
+        my_instrument = rm.open_resource(str(self.PSVisaInput.get()))
+        my_instrument.read_termination = '\r'
+        my_instrument.write_termination = '\r'
+        my_instrument.write('SESS00') #set to remote mode
+        time.sleep(.05)
+
         if self.ProgramOn == False:
             self.StartButton.configure(bg = 'white')
             self.ProgramOn = True
+            #TURN POWER ON
+            currentLimit = 'CURR00' + str(self.MaxCurrentInput.get()).replace('.','')
+            my_instrument.write(currentLimit) #sets current limit
+            time.sleep(.05)
+            voltageLimit = 'SOVP00' + str(self.MaxVoltageInput.get()).replace('.','')
+            my_instrument.write(voltageLimit) #sets voltage limit
+            time.sleep(.05)
+            my_instrument.write('VOLT00010') #sets voltage output
+            time.sleep(.05)
+            my_instrument.write('SOUT000') #turn power supply on
+            time.sleep(.05)
+            
         else:
             self.StartButton.configure(bg = 'red')
             self.ProgramOn = False
+            #TURN POWER OFF
+            my_instrument.write('SOUT001') #turn power supply off
+            time.sleep(.05)
 
 #CHANGED SPACING ON THIS AFTER TEST, IF IT DOESNT WORK THEN GIVE IT ANOTHER TAB
 def my_after():
@@ -192,6 +225,7 @@ def my_after():
         A.my_instrument.write('POWER?')
         A.ActualLaserPowerOutput.config(text=str(A.my_instrument.read()))
 
+    ######               SET UP THE POWER SUPPLY TO CONSTANTLY UPDATE VOLTAGE AND CURRENT              ##############
 
     root.after(100, my_after)
 
